@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Primary SEO Meta Tags -->
+    <title>Stepfinity | Generative Fractal Explorer</title>
+    <meta name="description" content="Experience Stepfinity, a real-time generative fractal explorer. Dive into infinite algorithmic patterns with customizable sub-loops, scale divisors, and dynamic color scaling. An immersive mathematical art experience designed for high-performance web environments.">
+    <meta name="keywords" content="Stepfinity, generative art, fractal explorer, WebGL fractals, algorithmic patterns, mathematical visualization, interactive art, real-time rendering">
+    <link rel="canonical" href="https://pirillo.com/arcade/stepfinity.html">
+    <meta name="author" content="Chris Pirillo">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://pirillo.com/arcade/stepfinity.html">
+    <meta property="og:title" content="Stepfinity | Generative Fractal Explorer">
+    <meta property="og:description" content="Infinite mathematical beauty in your browser. Explore complex generative fractals with real-time controls and 4K export capabilities.">
+    <meta property="og:image" content="https://pirillo.com/arcade/images/stepfinity.png">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@ChrisPirillo">
+    <meta name="twitter:creator" content="@ChrisPirillo">
+    <meta name="twitter:url" content="https://pirillo.com/arcade/stepfinity.html">
+    <meta name="twitter:title" content="Stepfinity | Generative Fractal Explorer">
+    <meta name="twitter:description" content="Step into the infinite with Stepfinity. A high-performance generative art engine by Chris Pirillo.">
+    <meta name="twitter:image" content="https://pirillo.com/arcade/images/stepfinity.png">
+
+    <!-- Performance & Resource Hints -->
+    <link rel="preconnect" href="https://www.googletagmanager.com">
+    
+    <!-- Google Analytics (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-1CQ4D3VQ3L"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-1CQ4D3VQ3L');
+    </script>
+
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Stepfinity",
+      "url": "https://pirillo.com/arcade/stepfinity.html",
+      "description": "An interactive generative fractal explorer utilizing WebGL for real-time mathematical visualization.",
+      "applicationCategory": "MultimediaApplication",
+      "operatingSystem": "Any",
+      "author": {
+        "@type": "Person",
+        "name": "Chris Pirillo",
+        "url": "https://pirillo.com"
+      },
+      "screenshot": "https://pirillo.com/arcade/images/stepfinity.png",
+      "featureList": [
+        "Real-time fractal generation",
+        "Customizable geometric sub-loops",
+        "Dynamic color scaling",
+        "4K PNG Export capability",
+        "Auto-advance mode"
+      ]
+    }
+    </script>
+
+    <style>
+        :root {
+            --bg-color: #0a0a0a;
+            --accent-color: #3b82f6;
+            --text-color: #e5e7eb;
+            --panel-bg: rgba(15, 15, 15, 0.95);
+            --transition-speed: 0.4s;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Semantic Main Container */
+        main {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            touch-action: none; /* Prevents scrolling on touch */
+        }
+
+        #fade-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: black;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease-in-out;
+            z-index: 5;
+        }
+
+        /* Navigation / Control Toggle */
+        #menu-toggle {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 100;
+            cursor: pointer;
+            width: 52px;
+            height: 52px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 50%;
+            backdrop-filter: blur(8px);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        #menu-toggle:hover { 
+            transform: scale(1.1); 
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .hamburger {
+            width: 24px;
+            height: 2px;
+            background: white;
+            position: relative;
+            transition: 0.3s;
+        }
+        .hamburger::before, .hamburger::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: white;
+            transition: 0.3s;
+        }
+        .hamburger::before { top: -8px; }
+        .hamburger::after { top: 8px; }
+
+        .menu-open .hamburger { background: transparent; }
+        .menu-open .hamburger::before { transform: rotate(45deg); top: 0; }
+        .menu-open .hamburger::after { transform: rotate(-45deg); top: 0; }
+
+        /* Settings Panel */
+        #settings-panel {
+            position: fixed;
+            top: 0;
+            right: -360px;
+            width: 320px;
+            height: 100vh;
+            background: var(--panel-bg);
+            backdrop-filter: blur(20px);
+            box-shadow: -10px 0 30px rgba(0,0,0,0.8);
+            z-index: 90;
+            padding: 80px 20px 40px;
+            overflow-y: auto;
+            transition: right 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            border-left: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        #settings-panel.open { right: 0; }
+
+        .control-group { margin-bottom: 24px; }
+        
+        label { 
+            display: block; 
+            font-size: 11px; 
+            font-weight: 700; 
+            margin-bottom: 8px; 
+            color: #9ca3af; 
+            text-transform: uppercase; 
+            letter-spacing: 0.1em; 
+        }
+        
+        .val-badge {
+            float: right;
+            color: var(--accent-color);
+            font-family: monospace;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 4px;
+            background: #2d2d2d;
+            border-radius: 2px;
+            appearance: none;
+            outline: none;
+            margin: 12px 0;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: 0.2s;
+            border: 2px solid #fff;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+        }
+
+        .color-row { display: flex; gap: 12px; align-items: center; margin-top: 8px; }
+        input[type="color"] {
+            border: none;
+            width: 48px;
+            height: 32px;
+            cursor: pointer;
+            background: transparent;
+            border-radius: 4px;
+        }
+
+        .toggle-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            margin-bottom: 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 13px;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .btn-primary { background: var(--accent-color); color: white; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3); }
+        .btn-secondary { background: #2d2d2d; color: #d1d5db; border: 1px solid rgba(255,255,255,0.1); }
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn:active { transform: translateY(0); }
+
+        #settings-panel::-webkit-scrollbar { width: 4px; }
+        #settings-panel::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+        .info { font-size: 10px; color: #4b5563; margin-top: 6px; line-height: 1.4; }
+
+        /* Hidden H1 for SEO without breaking visual layout */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            border: 0;
+        }
+    </style>
+</head>
+<body>
+
+    <h1 class="sr-only">Stepfinity - Generative Fractal Explorer by Chris Pirillo</h1>
+
+    <div id="fade-overlay"></div>
+
+    <header>
+        <div id="menu-toggle" aria-label="Toggle Settings Menu" role="button">
+            <div class="hamburger"></div>
+        </div>
+    </header>
+
+    <main>
+        <canvas id="gl-canvas"></canvas>
+    </main>
+
+    <aside id="settings-panel" aria-label="Stepfinity Configuration">
+        <section class="control-group">
+            <label>Master Simulation</label>
+            <button class="btn btn-primary" onclick="randomizeAll()">Randomize View</button>
+            <button class="btn btn-secondary" onclick="resetDefaults()">Reset Baseline</button>
+            <button class="btn btn-secondary" onclick="export4K()">Export 4K Capture</button>
+        </section>
+
+        <section class="control-group">
+            <div class="toggle-row">
+                <label for="auto-advance-toggle">Auto-Advance</label>
+                <input type="checkbox" id="auto-advance-toggle">
+            </div>
+            <label for="auto-interval">Interval <span class="val-badge" id="interval-val">5s</span></label>
+            <input type="range" id="auto-interval" min="2" max="60" value="5">
+            <div class="info">Auto-advance frequency (Locked during randomize)</div>
+        </section>
+
+        <section class="control-group">
+            <label for="u_inner_iters">Sub-Loops (d) <span class="val-badge" id="sub-iter-val">9</span></label>
+            <input type="range" id="u_inner_iters" min="2" max="25" step="1">
+            <div class="info">Deeply affects geometric detail. (Formula Original: 9)</div>
+        </section>
+
+        <section class="control-group">
+            <label for="u_p_divisor">Scale Divisor <span class="val-badge" id="p-div-val">9.0</span></label>
+            <input type="range" id="u_p_divisor" min="1" max="40" step="0.1">
+            <div class="info">Controls pattern frequency. (Formula Original: 9.0)</div>
+        </section>
+
+        <section class="control-group">
+            <label for="color-picker">Color Multiplier</label>
+            <div class="color-row">
+                <input type="color" id="color-picker" value="#994422">
+                <span id="color-hex" style="font-family:monospace; font-size:12px;">#994422</span>
+            </div>
+            <div class="info">Scales vec4(R, G, B, 1)</div>
+        </section>
+
+        <section class="control-group">
+            <label for="u_time_speed">Time Speed <span class="val-badge" id="time-val">1.0</span></label>
+            <input type="range" id="u_time_speed" min="0" max="5" step="0.1">
+            <div class="info">This setting is locked during randomization.</div>
+        </section>
+
+        <footer style="margin-top: 40px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 20px;">
+            <p style="font-size: 11px; color: #6b7280; text-align: center;">Created by Chris Pirillo</p>
+        </footer>
+    </aside>
+
+    <script id="vertex-shader" type="x-shader/x-vertex">
+        attribute vec2 position;
+        void main() {
+            gl_Position = vec4(position, 0.0, 1.0);
+        }
+    </script>
+
+    <script id="fragment-shader" type="x-shader/x-fragment">
+        precision highp float;
+        uniform vec2 u_resolution;
+        uniform float u_time;
+        uniform int u_iterations;
+        uniform int u_inner_iters;
+        uniform vec4 u_color_vec;
+        uniform float u_p_divisor;
+        uniform float u_z_offset;
+        uniform float u_step_factor;
+        uniform float u_intensity;
+        uniform float u_fade;
+
+        vec3 stable_tanh(vec3 v) {
+            vec3 exp2v = exp(-2.0 * v);
+            return (1.0 - exp2v) / (1.0 + exp2v);
+        }
+
+        void main() {
+            vec4 o = vec4(0.0);
+            vec2 FC = gl_FragCoord.xy;
+            vec2 r = u_resolution;
+            float z = 0.0;
+            float d = 0.0;
+
+            vec3 dir = normalize(vec3(FC * 2.0 - r, -r.y)); 
+
+            for(int i = 0; i < 200; i++) {
+                if (i >= u_iterations) break;
+                
+                vec3 p = z * dir;
+                
+                for(int j = 0; j < 30; j++) {
+                    if (j >= u_inner_iters) break;
+                    p += sin(ceil(p / u_p_divisor).zxy + u_time);
+                }
+                
+                d = u_step_factor * abs(p.z + u_z_offset);
+                z += d;
+                
+                o += u_color_vec / (d + 0.001);
+            }
+            
+            vec3 finalColor = stable_tanh(o.rgb / u_intensity);
+            gl_FragColor = vec4(finalColor * u_fade, 1.0);
+        }
+    </script>
+
+    <script>
+        /**
+         * Stepfinity Core Engine
+         * Built by Chris Pirillo
+         * Optimized for Production Performance
+         */
+        const canvas = document.getElementById('gl-canvas');
+        const gl = canvas.getContext('webgl');
+        const menuToggle = document.getElementById('menu-toggle');
+        const settingsPanel = document.getElementById('settings-panel');
+        const autoToggle = document.getElementById('auto-advance-toggle');
+        const intervalSlider = document.getElementById('auto-interval');
+        const fadeOverlay = document.getElementById('fade-overlay');
+
+        let isMenuOpen = false;
+        let lastAutoTime = Date.now();
+        let currentFade = 1.0;
+        let isTransitioning = false;
+        let time = 0;
+        let lastFrameTime = performance.now();
+
+        const params = {
+            u_iterations: 55,
+            u_inner_iters: 9,
+            u_color_vec: [9, 4, 2, 1],
+            u_p_divisor: 9.0,
+            u_z_offset: 40.0, 
+            u_step_factor: 0.1,
+            u_intensity: 6000,
+            u_time_speed: 1.0
+        };
+
+        const defaultParams = JSON.parse(JSON.stringify(params));
+
+        function initGL() {
+            if (!gl) return null;
+            const vsSource = document.getElementById('vertex-shader').text;
+            const fsSource = document.getElementById('fragment-shader').text;
+            const vs = compileShader(gl, vsSource, gl.VERTEX_SHADER);
+            const fs = compileShader(gl, fsSource, gl.FRAGMENT_SHADER);
+            if (!vs || !fs) return null;
+
+            const program = gl.createProgram();
+            gl.attachShader(program, vs);
+            gl.attachShader(program, fs);
+            gl.linkProgram(program);
+            if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return null;
+            gl.useProgram(program);
+
+            const posBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, posBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]), gl.STATIC_DRAW);
+            const posLoc = gl.getAttribLocation(program, "position");
+            gl.enableVertexAttribArray(posLoc);
+            gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+
+            return {
+                program,
+                uniforms: {
+                    u_resolution: gl.getUniformLocation(program, "u_resolution"),
+                    u_time: gl.getUniformLocation(program, "u_time"),
+                    u_iterations: gl.getUniformLocation(program, "u_iterations"),
+                    u_inner_iters: gl.getUniformLocation(program, "u_inner_iters"),
+                    u_color_vec: gl.getUniformLocation(program, "u_color_vec"),
+                    u_p_divisor: gl.getUniformLocation(program, "u_p_divisor"),
+                    u_z_offset: gl.getUniformLocation(program, "u_z_offset"),
+                    u_step_factor: gl.getUniformLocation(program, "u_step_factor"),
+                    u_intensity: gl.getUniformLocation(program, "u_intensity"),
+                    u_fade: gl.getUniformLocation(program, "u_fade")
+                }
+            };
+        }
+
+        function compileShader(gl, source, type) {
+            const shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                console.error(gl.getShaderInfoLog(shader));
+                gl.deleteShader(shader);
+                return null;
+            }
+            return shader;
+        }
+
+        const glResources = initGL();
+
+        function render() {
+            if (!glResources) return;
+            const now = performance.now();
+            const delta = (now - lastFrameTime) / 1000;
+            lastFrameTime = now;
+            time += delta * params.u_time_speed;
+
+            if (canvas.width !== window.innerWidth || canvas.height !== window.innerHeight) {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                gl.viewport(0, 0, canvas.width, canvas.height);
+            }
+
+            gl.useProgram(glResources.program);
+            gl.uniform2f(glResources.uniforms.u_resolution, canvas.width, canvas.height);
+            gl.uniform1f(glResources.uniforms.u_time, time);
+            gl.uniform1i(glResources.uniforms.u_iterations, params.u_iterations);
+            gl.uniform1i(glResources.uniforms.u_inner_iters, params.u_inner_iters);
+            gl.uniform4f(glResources.uniforms.u_color_vec, ...params.u_color_vec);
+            gl.uniform1f(glResources.uniforms.u_p_divisor, params.u_p_divisor);
+            gl.uniform1f(glResources.uniforms.u_z_offset, params.u_z_offset);
+            gl.uniform1f(glResources.uniforms.u_step_factor, params.u_step_factor);
+            gl.uniform1f(glResources.uniforms.u_intensity, params.u_intensity);
+            gl.uniform1f(glResources.uniforms.u_fade, currentFade);
+
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+            if (autoToggle.checked && !isTransitioning) {
+                const interval = parseInt(intervalSlider.value) * 1000;
+                if (Date.now() - lastAutoTime > interval) randomizeAll();
+            }
+            requestAnimationFrame(render);
+        }
+
+        function toggleMenu(forceClose = null) {
+            isMenuOpen = forceClose !== null ? !forceClose : !isMenuOpen;
+            if (isMenuOpen) {
+                document.body.classList.add('menu-open');
+                settingsPanel.classList.add('open');
+                settingsPanel.setAttribute('aria-hidden', 'false');
+            } else {
+                document.body.classList.remove('menu-open');
+                settingsPanel.classList.remove('open');
+                settingsPanel.setAttribute('aria-hidden', 'true');
+            }
+        }
+
+        function randomizeAll() {
+            if (isTransitioning) return;
+            isTransitioning = true;
+
+            fadeOut(() => {
+                const lockedTimeSpeed = params.u_time_speed;
+                Object.assign(params, JSON.parse(JSON.stringify(defaultParams)));
+                params.u_time_speed = lockedTimeSpeed;
+                params.u_inner_iters = Math.floor(Math.random() * 8) + 7;
+                params.u_p_divisor = (Math.random() * 12.0) + 6.0;
+                params.u_color_vec = [Math.random() * 15.0, Math.random() * 15.0, Math.random() * 15.0, 1.0];
+                updateUI();
+                lastAutoTime = Date.now();
+                fadeIn(() => isTransitioning = false);
+            });
+        }
+
+        function fadeOut(callback) {
+            let start = null;
+            const duration = 250;
+            function step(timestamp) {
+                if (!start) start = timestamp;
+                const progress = timestamp - start;
+                currentFade = Math.max(0, 1 - (progress / duration));
+                if (progress < duration) requestAnimationFrame(step);
+                else { currentFade = 0; callback(); }
+            }
+            requestAnimationFrame(step);
+        }
+
+        function fadeIn(callback) {
+            let start = null;
+            const duration = 350;
+            function step(timestamp) {
+                if (!start) start = timestamp;
+                const progress = timestamp - start;
+                currentFade = Math.min(1, progress / duration);
+                if (progress < duration) requestAnimationFrame(step);
+                else { currentFade = 1; callback(); }
+            }
+            requestAnimationFrame(step);
+        }
+
+        function updateUI() {
+            const fields = ['u_inner_iters', 'u_p_divisor', 'u_time_speed'];
+            fields.forEach(f => {
+                const el = document.getElementById(f);
+                if(el) el.value = params[f];
+                const badge = document.getElementById(f.replace('u_', '') + '-val');
+                if(badge) {
+                    let v = params[f];
+                    badge.innerText = typeof v === 'number' ? v.toFixed(v < 10 && v % 1 !== 0 ? 1 : 0) : v;
+                }
+            });
+
+            const rgbToHex = (r, g, b) => {
+                const toHex = c => {
+                    const h = Math.min(255, Math.floor((c / 15.0) * 255)).toString(16);
+                    return h.padStart(2, '0');
+                };
+                return '#' + toHex(params.u_color_vec[0]) + toHex(params.u_color_vec[1]) + toHex(params.u_color_vec[2]);
+            };
+            const hex = rgbToHex();
+            document.getElementById('color-picker').value = hex;
+            document.getElementById('color-hex').innerText = hex.toUpperCase();
+        }
+
+        function setupListeners() {
+            const bind = (id, paramKey, isInt = false) => {
+                const el = document.getElementById(id);
+                const valDisp = document.getElementById(id.replace('u_', '') + '-val');
+                if (!el) return;
+                el.addEventListener('input', (e) => {
+                    const val = isInt ? parseInt(e.target.value) : parseFloat(e.target.value);
+                    params[paramKey] = val;
+                    if(valDisp) valDisp.innerText = isInt ? val : val.toFixed(val < 10 ? 1 : 0);
+                });
+            };
+
+            bind('u_inner_iters', 'u_inner_iters', true);
+            bind('u_p_divisor', 'u_p_divisor');
+            bind('u_time_speed', 'u_time_speed');
+
+            document.getElementById('color-picker').addEventListener('input', (e) => {
+                const hex = e.target.value;
+                document.getElementById('color-hex').innerText = hex.toUpperCase();
+                params.u_color_vec = [
+                    parseInt(hex.slice(1, 3), 16) / 25.0, 
+                    parseInt(hex.slice(3, 5), 16) / 25.0,
+                    parseInt(hex.slice(5, 7), 16) / 25.0, 
+                    1.0
+                ];
+            });
+
+            intervalSlider.addEventListener('input', (e) => {
+                document.getElementById('interval-val').innerText = e.target.value + 's';
+                lastAutoTime = Date.now();
+            });
+
+            menuToggle.addEventListener('click', e => { e.stopPropagation(); toggleMenu(); });
+            window.addEventListener('keydown', e => { if (e.key === 'Escape') toggleMenu(true); });
+            canvas.addEventListener('click', () => { if (!isMenuOpen) randomizeAll(); });
+            window.addEventListener('click', e => {
+                if (isMenuOpen && !settingsPanel.contains(e.target) && !menuToggle.contains(e.target)) toggleMenu(true);
+            });
+        }
+
+        function resetDefaults() {
+            Object.assign(params, JSON.parse(JSON.stringify(defaultParams)));
+            updateUI();
+        }
+
+        async function export4K() {
+            const width = 3840, height = 2160;
+            const osc = document.createElement('canvas');
+            osc.width = width; osc.height = height;
+            const gl2 = osc.getContext('webgl');
+            if (!gl2) return;
+            const vs = compileShader(gl2, document.getElementById('vertex-shader').text, gl2.VERTEX_SHADER);
+            const fs = compileShader(gl2, document.getElementById('fragment-shader').text, gl2.FRAGMENT_SHADER);
+            const prog = gl2.createProgram();
+            gl2.attachShader(prog, vs); gl2.attachShader(prog, fs);
+            gl2.linkProgram(prog); gl2.useProgram(prog);
+            const buf = gl2.createBuffer();
+            gl2.bindBuffer(gl2.ARRAY_BUFFER, buf);
+            gl2.bufferData(gl2.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]), gl2.STATIC_DRAW);
+            const loc = gl2.getAttribLocation(prog, "position");
+            gl2.enableVertexAttribArray(loc);
+            gl2.vertexAttribPointer(loc, 2, gl2.FLOAT, false, 0, 0);
+            gl2.uniform2f(gl2.getUniformLocation(prog, "u_resolution"), width, height);
+            gl2.uniform1f(gl2.getUniformLocation(prog, "u_time"), time);
+            gl2.uniform1i(gl2.getUniformLocation(prog, "u_iterations"), params.u_iterations);
+            gl2.uniform1i(gl2.getUniformLocation(prog, "u_inner_iters"), params.u_inner_iters);
+            gl2.uniform4f(gl2.getUniformLocation(prog, "u_color_vec"), ...params.u_color_vec);
+            gl2.uniform1f(gl2.getUniformLocation(prog, "u_p_divisor"), params.u_p_divisor);
+            gl2.uniform1f(gl2.getUniformLocation(prog, "u_z_offset"), params.u_z_offset);
+            gl2.uniform1f(gl2.getUniformLocation(prog, "u_step_factor"), params.u_step_factor);
+            gl2.uniform1f(gl2.getUniformLocation(prog, "u_intensity"), params.u_intensity);
+            gl2.uniform1f(gl2.getUniformLocation(prog, "u_fade"), 1.0);
+            gl2.viewport(0, 0, width, height);
+            gl2.drawArrays(gl2.TRIANGLES, 0, 6);
+            const a = document.createElement('a');
+            a.download = `stepfinity_4k_${Date.now()}.png`;
+            a.href = osc.toDataURL("image/png");
+            a.click();
+        }
+
+        window.onload = () => {
+            setupListeners();
+            updateUI();
+            render();
+        };
+    </script>
+</body>
+</html>
